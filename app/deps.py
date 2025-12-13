@@ -10,7 +10,7 @@ from sqlalchemy import select
 from app.db.models import Users
 from app.db.schemas import users as user_schemas
 from app.db.schemas import auth as auth_schemas
-from app.db import sessions
+from app.db import sessions 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )

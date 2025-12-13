@@ -44,3 +44,11 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, Any]:
 
 
 Base: Any = declarative_base()
+
+async_session_maker = async_sessionmaker(
+    async_engine,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False,
+    class_=AsyncSession,
+)

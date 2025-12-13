@@ -1,12 +1,31 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from app.routers import users, auth, chats
 import os
+from app.routers import users, auth, orders, products
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Fastapi Template")
+    app = FastAPI(title="Canteen Backend")
+
+    # -------------------------
+    # 🔥 Request Body Logger
+    # -------------------------
+    # @app.middleware("http")
+    # async def log_request(request: Request, call_next):
+    #     body = await request.body()
+    #     print("\n=== REQUEST BODY START ===")
+    #     print(body.decode() or "<empty>")
+    #     print("=== REQUEST BODY END ===\n")
+
+    #     # Re-inject the body so downstream code can read it again
+    #     async def receive():
+    #         return {"type": "http.request", "body": body}
+
+    #     request = Request(request.scope, receive=receive)
+
+    #     response = await call_next(request)
+    #     return response
 
     # Serve static files
     from fastapi.staticfiles import StaticFiles
@@ -16,23 +35,22 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(users.router)
     app.include_router(auth.router)
-    from app.routers import lostandfound
-    app.include_router(lostandfound.router)
-    app.include_router(chats.router)
+    app.include_router(orders.router)
+    app.include_router(products.router)
 
     # Allowed origins
     origins = [
         "https://jihc-7777.web.app",
         "https://jihc-777.web.app",
         "http://localhost",
-        "http://127.0.0.1",
+        "http://127.0.0.1"  
     ]
 
-    # ✅ CORS middleware (inside create_app)
+    # CORS middleware
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_origin_regex=r"http://localhost(:\d+)?",  # allow all localhost ports
+        allow_origin_regex=r"http://localhost(:\d+)?",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

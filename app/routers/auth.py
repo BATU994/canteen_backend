@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", summary="Register a new user")
+@router.post("/register/", summary="Register a new user")
 async def register_user(
     payload: user_schemas.UsersCreate,
     db: AsyncSession = Depends(sessions.get_async_session),
@@ -36,9 +36,6 @@ async def register_user(
         email=payload.email,
         password=get_password_hash(payload.password),
         name=payload.name,
-        group=payload.group,
-        gender=payload.gender,
-        userType=payload.userType,
     )
     db.add(user)
     await db.commit()
@@ -47,7 +44,7 @@ async def register_user(
 
 
 @router.post(
-    "/login",
+    "/login/",
     summary="Create access and refresh tokens for user",
     response_model=auth_schemas.Token,
 )
@@ -76,14 +73,10 @@ async def login(
     return {
         "access_token": create_access_token(jwt_data),
         "refresh_token": create_refresh_token(jwt_data),
-        "userId": user.id,
-        "userName": user.name,
-        "userType": user.userType,
+        "user_id": user.id,
+        "user_name": user.name,
         "email": user.email,
-        "group": user.group
     }
-
-
 
 @router.put("/edit/{user_id}", summary="Edit user details")
 async def edit_user(

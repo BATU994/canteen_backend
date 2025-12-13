@@ -4,62 +4,49 @@ from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.sql.schema import ForeignKey
 from .sessions import Base
 from uuid import uuid4
+from sqlalchemy import Enum
 
-# LostAndFound model for lost and found items
-class LostAndFound(Base):
-    __tablename__ = "lostandfound"
-
+class Order(Base):
+    __tablename__ = "orders"
     id = sa.Column(sa.Integer, primary_key=True, index=True)
-    item_id = sa.Column(sa.Text, nullable=False, unique=True, default=lambda: uuid4().hex)
-    userId = sa.Column(sa.Integer, nullable=False)
-    item_name = sa.Column(sa.Text, nullable=False)
-    isLost = sa.Column(sa.Boolean, nullable=False, server_default=sa.text('0'))
-    desc = sa.Column(sa.Text, nullable=False)
-    date = sa.Column(sa.Text, nullable=False)
-    location = sa.Column(sa.Text, nullable=False)
-    userName = sa.Column(sa.Text, nullable=False)
-    image = sa.Column(sa.Text, nullable=True)  # store file path
-    isResolved = sa.Column(sa.Boolean, nullable=False, server_default=sa.text('0'))
-
-
-class Message(Base):
-    __tablename__ = "messages"
-    chat_id = sa.Column(sa.Integer, sa.ForeignKey("chats.id"), nullable=False)
-    id = sa.Column(sa.Integer, primary_key=True, index=True)
-    sender_id = sa.Column(sa.Integer, sa.ForeignKey("users.id"), nullable=False)
-    receiver_id = sa.Column(sa.Integer, sa.ForeignKey("users.id"), nullable=False)
-    content = sa.Column(sa.Text, nullable=False)
+    user_id = sa.Column(sa.Integer, sa.ForeignKey("users.id"), nullable=False)
+    items = sa.Column(sa.JSON, nullable=False)
+    comment = sa.Column(sa.Text, nullable= True)
     timestamp = sa.Column(sa.DateTime, server_default=sa.func.now(), nullable=False)
-    sender = relationship("Users", foreign_keys=[sender_id], backref="sent_messages")
-    receiver = relationship("Users", foreign_keys=[receiver_id], backref="received_messages")
-
+    code = sa.Column(sa.Text , nullable=False, unique= True)
+    price = sa.Column(sa.Integer, nullable= False)
+    is_active = sa.Column(sa.Boolean, nullable = False, default=True)
+    user_name = sa.Column(sa.Text, nullable = True, default=True)
+    status = sa.Column(
+    Enum(
+        "cancelled",
+        "pending",
+        "ready",
+        "paid",
+        name="order_status_enum"
+    ),
+    nullable=False,
+    default="pending",
+    server_default="pending"
+    )
 
 
 class Users(Base):  
     __tablename__ = "users"
 
     id = sa.Column(sa.Integer, primary_key=True, index=True)
-    user_uuid = sa.Column(sa.Text, nullable=False, unique=True, default=lambda: uuid4().hex)
     email = sa.Column(sa.Text, nullable=False, unique=True)
     password = sa.Column(sa.Text, nullable=False)
     name = sa.Column(sa.Text, nullable=False)
-    group = sa.Column(sa.Text, nullable=True)
-    gender = sa.Column(sa.Text, nullable=True)
-    userType = sa.Column(sa.Text, nullable=True)
-    creation_date = sa.Column(sa.DateTime, server_default=sa.func.now(), nullable=False)  # type: ignore
+    creation_date = sa.Column(sa.DateTime, server_default=sa.func.now(), nullable=False)
 
+class Products(Base):
+    __tablename__ = "products"
 
-class Chat(Base):
-    __tablename__ = "chats" 
-    id = sa.Column(sa.Integer, primary_key=True, index=True)
-    user_ids = sa.Column(sa.JSON, nullable=False)
-    user_names = sa.Column(sa.JSON, nullable=False)
-    last_message = sa.Column(sa.Text, nullable=True)
-    item = sa.Column(sa.Text, nullable=True)
-    item_image = sa.Column(sa.Text, nullable=True)
-    item_id = sa.Column(sa.Text, nullable=True)
-    created_at = sa.Column(sa.DateTime, server_default=sa.func.now(), nullable=False)
-
-
-
-
+    id = sa.Column(sa.Integer, primary_key= True, index=True)
+    name = sa.Column(sa.Text, nullable=False, unique= True)
+    price = sa.Column(sa.Integer, nullable = False)
+    quantity = sa.Column(sa.Integer, nullable = False)
+    reg_time = sa.Column(sa.DateTime, server_default=sa.func.now(), nullable=False)
+    prod_type = sa.Column(sa.Text, nullable=False) 
+    image_path = sa.Column(sa.Text, nullable=True)

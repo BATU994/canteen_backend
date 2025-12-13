@@ -14,7 +14,6 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 auth_user_dependency = Annotated[Users, Depends(get_current_user)]
 
-
 @router.get("/get/users")
 async def get_users(
     current_user: auth_user_dependency,
