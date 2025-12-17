@@ -116,8 +116,8 @@ async def update_product(
     return item
 
 @router.delete("/delete/{prod_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_lostandfound(item_id: str, db: AsyncSession = Depends(sessions.get_async_session)):
-    result = await db.execute(select(Products).filter(Products.id == item_id))
+async def delete_lostandfound(prod_id: int, db: AsyncSession = Depends(sessions.get_async_session)):
+    result = await db.execute(select(Products).filter(Products.id == prod_id))
     item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -125,24 +125,23 @@ async def delete_lostandfound(item_id: str, db: AsyncSession = Depends(sessions.
     await db.commit()
     return None
 
-# @router.patch("/{prod_id}", response_model=products_schema.ProductBase)
-# async def patch_product(
-#     item_id: str,
-#     updates: products_schema.ProductBasePartialUpdate,
-#     db: AsyncSession = Depends(sessions.get_async_session),
-# ):
-#     result = await db.execute(select(Products).filter(Products.item_id == item_id))
-#     item = result.scalar_one_or_none()
-#     if not item:
-#         raise HTTPException(status_code=404, detail="Item not found")
+@router.patch("/patch/{prod_id}", response_model=products_schema.ProductBase)
+async def patch_product(
+    prod_id: int,
+    updates: products_schema.ProductBasePatch,
+    db: AsyncSession = Depends(sessions.get_async_session),
+):
+    result = await db.execute(select(Products).filter(Products.id == prod_id))
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
 
-#     data = updates.model_dump(exclude_unset=True, exclude_none=True)
-#     if not data:
-#         raise HTTPException(status_code=400, detail="No fields provided to update")
-#     for key, value in data.items():
-#         if hasattr(item, key):
-#             setattr(item, key, value)
-#     await db.commit()
-#     await db.refresh(item)
-#     return item
+    data = updates.model_dump(exclude_unset=True, exclude_none=True)
+    if not data:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
+    for key, value in data.items():
+        setattr(item, key, value)
+    await db.commit()
+    await db.refresh(item)
+    return item
 
