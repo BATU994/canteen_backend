@@ -52,7 +52,9 @@ async def broadcast_to_user(user_id: int, order_id: int, status: str):
     if user_id not in user_connections:
         return
     
+    # 🔥 FIXED: Added proper type segregation
     message = {
+        "type": "status_changed",  # Clear type for status updates
         "order_id": order_id,
         "status": status
     }
@@ -118,7 +120,7 @@ async def generate_unique_code(session: AsyncSession) -> str:
 # ============================================================
 @router.get("/all", response_model=list[Order])
 async def get_all_orders(db: AsyncSession = Depends(get_async_session)):
-    result = await db.execute(select(OrderModel))
+    result = await db.execute(select(OrderModel).where(OrderModel.status.not_in(["paid", "cancelled"])))
     return result.scalars().all()
 
 
@@ -266,6 +268,12 @@ async def orders_websocket(websocket: WebSocket):
     """
     General WebSocket endpoint for real-time order updates.
     Clients will receive messages with full order data.
+    
+    Message types:
+    - connection_established: Initial connection confirmation
+    - order_created: New order created
+    - order_update: Order data updated
+    - pong: Response to ping
     """
     await websocket.accept()
     active_connections.add(websocket)
@@ -299,11 +307,26 @@ async def orders_websocket(websocket: WebSocket):
 async def user_order_updates_websocket(websocket: WebSocket, user_id: int):
     """
     User-specific WebSocket endpoint for order status updates.
-    Clients will receive messages when their orders are updated:
-    {
-        "order_id": int,
-        "status": str
-    }
+    
+    Message types sent to client:
+    1. connection_established: When connection is first established
+       {
+           "type": "connection_established",
+           "message": "Connected to order updates for user {user_id}",
+           "user_id": int
+       }
+    
+    2. status_changed: When order status is updated
+       {
+           "type": "status_changed",
+           "order_id": int,
+           "status": str
+       }
+    
+    3. pong: Response to client ping
+       {
+           "type": "pong"
+       }
     """
     await websocket.accept()
     
@@ -313,9 +336,11 @@ async def user_order_updates_websocket(websocket: WebSocket, user_id: int):
     user_connections[user_id].add(websocket)
     
     try:
-        # Initial handshake
+        # 🔥 FIXED: Initial handshake with proper type
         await websocket.send_json({
-            "message": f"Connected to order updates for user {user_id}"
+            "type": "connection_established",
+            "message": f"Connected to order updates for user {user_id}",
+            "user_id": user_id
         })
         
         while True:
@@ -334,4 +359,4 @@ async def user_order_updates_websocket(websocket: WebSocket, user_id: int):
         if user_id in user_connections:
             user_connections[user_id].discard(websocket)
             if not user_connections[user_id]:
-                del user_connections[user_id]
+                del user_connections[user_id]   
