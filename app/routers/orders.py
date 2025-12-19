@@ -100,7 +100,7 @@ async def broadcast_order_update(
 # ============================================================
 async def generate_unique_code(session: AsyncSession) -> str:
     allowed_letters = [
-        'А','Б','В','Г','Д','Е','Ж','З','И','К','Л','М','Н','О','П','Р','С','Т','У','Ф','Х','Ч','Ш','Э','Ю','Я'
+        '1','2','3','4','5','6','7','8','9'
     ]
 
     while True:
@@ -279,7 +279,6 @@ async def orders_websocket(websocket: WebSocket):
     active_connections.add(websocket)
     
     try:
-        # Initial handshake to confirm connection
         await websocket.send_json({
             "type": "connection_established",
             "message": "Connected to order updates"
@@ -287,8 +286,6 @@ async def orders_websocket(websocket: WebSocket):
         
         while True:
             data = await websocket.receive_json()
-            
-            # Keep the connection alive with ping/pong
             if data.get("action") == "ping":
                 await websocket.send_json({"type": "pong"})
                 
@@ -298,11 +295,6 @@ async def orders_websocket(websocket: WebSocket):
         print(f"WebSocket error: {str(e)}")
     finally:
         active_connections.discard(websocket)
-
-
-# ============================================================
-#  WEBSOCKET — USER-SPECIFIC ORDER STATUS UPDATES
-# ============================================================
 @router.websocket("/ws/updates/{user_id}")
 async def user_order_updates_websocket(websocket: WebSocket, user_id: int):
     """
@@ -329,14 +321,11 @@ async def user_order_updates_websocket(websocket: WebSocket, user_id: int):
        }
     """
     await websocket.accept()
-    
-    # Add this connection to the user's connection set
     if user_id not in user_connections:
         user_connections[user_id] = set()
     user_connections[user_id].add(websocket)
     
     try:
-        # 🔥 FIXED: Initial handshake with proper type
         await websocket.send_json({
             "type": "connection_established",
             "message": f"Connected to order updates for user {user_id}",
@@ -344,7 +333,6 @@ async def user_order_updates_websocket(websocket: WebSocket, user_id: int):
         })
         
         while True:
-            # Keep connection alive and handle client messages
             data = await websocket.receive_json()
             
             if data.get("action") == "ping":
@@ -355,7 +343,6 @@ async def user_order_updates_websocket(websocket: WebSocket, user_id: int):
     except Exception as e:
         print(f"WebSocket error for user {user_id}: {str(e)}")
     finally:
-        # Clean up connection
         if user_id in user_connections:
             user_connections[user_id].discard(websocket)
             if not user_connections[user_id]:
