@@ -79,7 +79,7 @@ async def update_product(
     quantity: int = Form(None),
     price: float = Form(None),
     prod_type: str = Form(None),
-    image: UploadFile | None = File(None),  # file is optional
+    image: UploadFile | None = File(None),
     db: AsyncSession = Depends(sessions.get_async_session),
 ):
     # Fetch the existing item
@@ -87,8 +87,6 @@ async def update_product(
     item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-
-    # --- Update fields if they were sent ---
     if name is not None:
         item.name = name
     if quantity is not None:
@@ -97,19 +95,13 @@ async def update_product(
         item.price = price
     if prod_type is not None:
         item.prod_type = prod_type
-
-    # --- Update image if a new file is sent ---
     if image is not None:
         extension = image.filename.split(".")[-1]
         filename = f"{uuid.uuid4()}.{extension}"
         filepath = os.path.join(UPLOAD_DIR, filename)
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(image.file, buffer)
-
-        # Store URL-friendly path
         item.image_path = f"/static/products/{filename}"
-
-    # Commit changes
     await db.commit()
     await db.refresh(item)
 
