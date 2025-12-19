@@ -40,10 +40,10 @@ def create_app() -> FastAPI:
 
     # Allowed origins
     origins = [
-        "https://jihc-7777.web.app",
-        "https://jihc-777.web.app",
+        "https://canteen-frontend-seller.web.app",
+        "https://canteen-frontend-buyer.web.app",
         "http://localhost",
-        "http://127.0.0.1"  
+        "http://127.0.0.1"
     ]
 
     # CORS middleware
